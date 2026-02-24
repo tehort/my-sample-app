@@ -1,7 +1,7 @@
 # General Guidelines
 
-**ALWAYS** use "question" or "askQuestions" tools if available, to ask the user questions
 This is a Flutter and Dart mobile app project, the architecture is still ongoing, and many features are not implemented yet
+**ALWAYS** use "question" or "askQuestions" tools if available, to ask the user questions
 
 ## App Architecture
 
