@@ -1,0 +1,20 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+formatter:
+  trailing_commas: preserve
+  page_width: 120
+
+analyzer:
+  errors:
+    strict_raw_type: ignore
+    
+linter:
+  rules:
+    eol_at_end_of_file: true
+    lines_longer_than_80_chars: false
+    public_member_api_docs: false
+    always_use_package_imports: false
+    prefer_relative_imports: true
+    directives_ordering: true
+    implementation_imports: true
+    avoid_relative_lib_imports: true

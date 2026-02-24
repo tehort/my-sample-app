@@ -5,7 +5,8 @@ This is a Flutter and Dart mobile app project, the architecture is still ongoing
 
 ## App Architecture
 
-This app uses a modularized architecture, modules are placed at the packages/ folder, containing the core and features folders:
+This app uses a modularized monorepo architecture.
+Each module is package on the packages/core/ or packages/features/ folder.
 
 ### Project Structure
 
@@ -25,7 +26,7 @@ my-sample-app/                                  # Root workspace of the monorepo
 │       │   │   └── pubspec.yaml
 │       │   ├── <feature_a>_internal_api/       # Optional - Shared logic, DI, and models strictly internal to this feature cluster
 │       │   │   └── pubspec.yaml
-│       │   ├── <feature_a>_<sub_feature_a>/      # Independent Clean Architecture sub-feature implementation packages
+│       │   ├── <feature_a>_<sub_feature_a>/    # Independent Clean Architecture sub-feature implementation packages
 │       │   │   └── pubspec.yaml
 │       │   └── <feature_a>_<sub_feature_b>/
 │       │       └── pubspec.yaml
@@ -41,11 +42,12 @@ my-sample-app/                                  # Root workspace of the monorepo
 │       └── pubspec.yaml
 │
 ├── docs/                                       # Project documentation and architectural guidelines
+│   └── specs/                                  # Features and requirements specs
 │   └── adrs/                                   # Architecture Decision Records logging significant technical choices
 │
 ├── tools/                                      # Custom helper scripts, CI/CD utilities
 │
-├── AGENTS.md                                   # AI assistant prompts or specific contributor guidelines
+├── AGENTS.md                                   # AI assistant prompts and contributor guidelines
 ├── melos.yaml                                  # Melos workspace configuration for managing monorepo scripts and linking
 ├── analysis_options.yaml                       # Shared Dart linter rules enforced strictly across the entire workspace
 └── pubspec.yaml                                # Root metadata and workspace-level tooling dependencies
@@ -188,7 +190,7 @@ my-sample-app/packages/core/
 
 ## Development Guidelines
 
-- Flutter 3.41 and Dart 3.11
+- Flutter 3.41 and Dart 3.11 (Search online for update documentation)
 - BLoC for state management
 - Do not use code generation - except for equatable and serializable (json_serializable) classes, avoid freezed, auto_route, injectable packages
 - Follow D.R.Y., K.I.S.S., and Clean code patterns
