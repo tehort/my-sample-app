@@ -6,7 +6,11 @@ This is a Flutter and Dart mobile app project, the architecture is still ongoing
 ## App Architecture
 
 This app uses a modularized monorepo architecture.
-Each module is package on the packages/core/ or packages/features/ folder.
+Each module is a package.
+Core modules are located at packages/core/.
+Feature modules are located packages/features/. Feature modules can be comprised of a api (optional) internal api (optional) and feature implementation modules
+
+Each
 
 ### Project Structure
 
@@ -17,7 +21,7 @@ my-sample-app/                                  # Root workspace of the monorepo
 │   │   ├── <package_a>/
 │   │   │   └── pubspec.yaml
 │   │   ├── <package_b>/...
-│   │   └── ui_kit/                             # Shared design system, themes, and reusable UI components
+│   │   └── ui_toolkit/                             # Shared design system, themes, and reusable UI components
 │   │       └── pubspec.yaml
 │   │
 │   └── features/                               # Vertical domain slices containing business logic and UI flows
@@ -26,9 +30,9 @@ my-sample-app/                                  # Root workspace of the monorepo
 │       │   │   └── pubspec.yaml
 │       │   ├── <feature_a>_internal_api/       # Optional - Shared logic, DI, and models strictly internal to this feature cluster
 │       │   │   └── pubspec.yaml
-│       │   ├── <feature_a>_<sub_feature_a>/    # Independent Clean Architecture sub-feature implementation packages
+│       │   ├── <feature_implementation_a>/     # Independent Clean Architecture packages
 │       │   │   └── pubspec.yaml
-│       │   └── <feature_a>_<sub_feature_b>/
+│       │   └── <feature_implementation_b>/     # Feature implementation packages
 │       │       └── pubspec.yaml
 │       ├── <feature_b>/...
 │       └── <feature_c>/...
@@ -55,7 +59,7 @@ my-sample-app/                                  # Root workspace of the monorepo
 
 ### Feature Packages
 
-Feature packages are placed at the packages/features/ folder, and may contain the **API** (api), **Internal API** (internal_api) and **Sub-Feature Implementation** packages.
+Feature packages are clusters placed at the packages/features/\<feature_>/ folder, and may contain the **API** (api), **Internal API** (internal_api) and **Feature Implementation** packages.
 
 Folder structure:
 
@@ -66,9 +70,9 @@ my-sample-app/
         └── <feature_a>/
             ├── <feature_a>_api/
             ├── <feature_a>_internal_api/
-            ├── <feature_a>_<sub_feature_a>/
-            ├── <feature_a>_<sub_feature_b>/
-            └── <feature_a>_<sub_feature_c>/
+            ├── <feature_implementation_a>/
+            ├── <feature_implementation_b>/
+            └── <feature_implementation_c>/
 ```
 
 #### API Feature Packages
@@ -109,18 +113,18 @@ They can only depend on it's own cluster api and general core packages.
 └── pubspec.yaml
 ```
 
-#### Sub-Feature Implementation Feature Packages
+#### Feature Implementation Packages
 
-**Sub-Feature Implementation Packages**: Sub-feature packages are the vertical, domain-specific slices of this app.
-Each sub-feature package consists of isolated Clean Architecture layers (presentation, domain, data, infrastructure) that execute the business logic, state management, and UI for a specific feature or sub-feature.
+**Feature Implementation Packages**: Feature packages are the vertical, domain-specific slices of this app.
+Each feature package consists of isolated Clean Architecture layers (presentation, domain, data, infrastructure) that execute the business logic, state management, and UI for a specific feature.
 
 They can only depend on other feature's APIs, core packages or it's own cluster internal API.
 
-Each sub-feature package must also implement the Module abstract class (<feature_name>_module.dart file).
+Each feature package must also implement the Module abstract class (<feature_name>_module.dart file) extensions (either CoreModule or FeatureModule).
 
 ```markdown
 <feature_a>/
-└── <feature_a>_<sub_feature_a>/
+└── <feature_implementation_a>/
     ├── lib/
     │   └── src/
     │       ├── data/
@@ -178,15 +182,17 @@ my-sample-app/packages/core/
     └── pubspec.yaml
 ```
 
-### Dependency Import Rules
+### Packages Dependency Import Rules
 
 - core → can import other core packages (no circular deps)
 - \<feature>_api → can import core + \<feature>_apis
 - \<feature>_internal_api → can import core + \<feature>_apis
-- \<sub_feature> → can import core + \<feature>_apis + \<feature>_internal_apis
+- \<feature_implementation> → can import core + \<feature>_apis + \<feature>_internal_apis
 - Features never import other features — communicate via events, bus, streams
 - core never imports any feature
 - No circular dependencies at any level
+
+---
 
 ## Development Guidelines
 
@@ -204,7 +210,7 @@ my-sample-app/packages/core/
 
 - Every folder gets a barrel file
 - Parent barrels composes the children
-- Sub-feature Implementation Packages: the root barrel exposes only the module file (<feature_a>_module.dart)
+- Feature Implementation Packages: the root barrel exposes only the module file (<feature_a>_module.dart)
 - Core Packages: may use multi-entrypoint package barrels (scoped imports) to expose topic specific entrypoints or slices
 
 ### Imports
@@ -212,15 +218,152 @@ my-sample-app/packages/core/
 - Use direct style imports internally
 - Use Package style imports for external packages`
 
+---
+
 ## Modules System
 
-ONGOING
+### Module class
+
+The module system consists of a base Module sealed class.
+Modules and other packages are not meant to extend this Module class, they should extend CoreModule and FeatureModule instead
+
+Conventions:
+
+- Use kebab-case prefixed with forward slash
+- Unique name identifier for this module.
+
+```dart
+sealed class Module {
+  String get name;
+}
+```
+
+#### Core Modules
+
+**Core modules** are loaded first and provide foundational infrastructure
+
+```dart
+abstract class CoreModule extends Module {}
+```
+
+#### Feature Modules
+
+**Feature modules** represents the vertical slices
+
+```dart
+abstract class FeatureModule extends Module {}
+```
+
+### Modules Traits
+
+#### DependenciesProviderModule
+
+The module provides a list of dependencies to be registered during startup.
+
+```dart
+mixin DependenciesProviderModule on Module {
+    @override
+    List<DependencyDefinition> get dependenciesDefinitions => []
+}
+```
+
+#### DependsOnModule
+
+Names of modules this module requires to be registered before it.
+
+```dart
+mixin DependsOnModule on Module {
+  Set<Type> get dependsOn => {};
+}
+```
+
+#### InitializableModule
+
+Runs after all DI registrations are complete.
+
+```dart
+mixin InitializableModule on Module {
+  Future<void> initialize(AsyncDependencyResolver resolver);
+}
+```
+
+#### LateInitializableModule
+
+Runs AFTER all modules have initialized
+
+```dart
+mixin LateInitializableModule on Module {
+  Future<void> onPostInitialize(AsyncDependencyResolver resolver);
+}
+```
+
+#### AllReadyModule
+
+Called after the app is fully launched and the first frame is rendered.
+Non-blocking — failures here must not crash the app, use try catch here
+
+```dart
+mixin AllReadyModule on Module {
+  Future<void> onAllReady(AsyncDependencyResolver resolver);
+}
+```
+
+#### DisposableModule
+
+This gets called in reverse priority order during app shutdown or hot-restart scenarios
+
+```dart
+mixin DisposableModule on Module {
+  Future<void> dispose();
+}
+```
+
+#### AppLifecycleAwareModule
+
+Reacts to AppLifecycleState changes (resumed, paused, detached, hidden, inactive). Useful for analytics modules flushing on background, auth modules refreshing tokens on resume, etc.
+
+```dart
+mixin AppLifecycleAwareModule on Module {
+  void onLifecycleChanged(AppLifecycleState state);
+}
+```
+
+## Routing
+
+TO-DO
+
+Router
+
+Routes Registry
+
+appNavigator.pushModule(?)
+appNavigator.push(?)
+
+?.buildModuleEntrypoint(?)
+
+```dart
+mixin RouteProviderModule on FeatureModule {
+  RouteDefinition get route;
+}
+```
+
+```dart
+mixin EntrypointProviderModule on FeatureModule {
+  Widget? buildModuleEntrypoint(?);
+}
+```
 
 ## Dependency Injection and Registries
 
-ONGOING
+TO-DO
 
-## App Startup
+ModuleRegistry
+DependenciesRegistry
+
+
+## App Startup  
+
+TODO
 
 TODO
 
@@ -251,3 +394,4 @@ TODO
 ## Tests
 
 TODO
+
